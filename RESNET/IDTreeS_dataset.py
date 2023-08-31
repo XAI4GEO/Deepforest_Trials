@@ -26,7 +26,7 @@ class IDTreeSDataset:
             max_pixel_size=None,
             pixel_size=None,
             min_sample_size=None,
-        ):
+    ):
         self.rgb_paths = rgb_paths
         self.bboxes_paths = bboxes_paths
         self.classes_path = classes_path
@@ -175,7 +175,15 @@ def _pad_image(data, pixel_size):
     pad_width_x2 = pixel_size - data.shape[1] - pad_width_x1
     pad_width_y1 = np.floor((pixel_size - data.shape[2])/2).astype(int)
     pad_width_y2 = pixel_size - data.shape[2] - pad_width_y1
-    data = np.pad(data, pad_width=[(0, 0),(pad_width_x1, pad_width_x2),(pad_width_y1, pad_width_y2)], mode='constant')
+    data = np.pad(
+        data,
+        pad_width=[
+            (0, 0),
+            (pad_width_x1, pad_width_x2),
+            (pad_width_y1, pad_width_y2)
+        ],
+        mode='constant'
+    )
     return data
 
 
