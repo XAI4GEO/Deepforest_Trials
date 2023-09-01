@@ -27,7 +27,8 @@ class IDTreeSDataset:
             max_pixel_size=None,
             pixel_size=None,
             min_sample_size=None,
-            augment_data=False,
+            balance_classes=False,
+            augment_data=False
     ):
         self.rgb_paths = rgb_paths
         self.bboxes_paths = bboxes_paths
@@ -41,6 +42,7 @@ class IDTreeSDataset:
             else PIXEL_SIZE_DEF
         self.min_sample_size = min_sample_size if min_sample_size is not None \
             else MIN_SAMPLE_SIZE_DEF
+        self.balance_classes = balance_classes
         self.augment_data = augment_data
 
         self.classes = None
@@ -129,12 +131,17 @@ class IDTreeSDataset:
                 labels.append(label)
                 imgs.append(img)
 
-        tree_ids, labels, imgs = _balance_classes(
+        tree_ids, labels, imgs = _remove_small_classes(
             np.asarray(tree_ids),
             np.asarray(labels),
             np.stack(imgs),
             self.min_sample_size
         )
+
+        if self.balance_classes:
+            tree_ids, labels, imgs = _balance_classes(
+                tree_ids, labels, imgs
+            )
 
         if self.augment_data:
             tree_ids, labels, imgs = _augment_data(
@@ -148,7 +155,7 @@ class IDTreeSDataset:
         return tree_ids, labels_categorical, imgs
 
 
-def _balance_classes(tree_ids, labels, imgs, min_sample_size):
+def _remove_small_classes(tree_ids, labels, imgs, min_sample_size):
     """
     Balance class compositions by dropping classes with
     few samples.
@@ -202,7 +209,7 @@ def _rotate(data, angle, resize=False):
     return rotated.transpose(2, 0, 1)  # same as on input
 
 
-def _augment_data(tree_ids, labels, imgs):
+def _balance_classes(tree_ids, labels, imgs):
     """
     Augment data by performing random flip/rotations to the
     images of the under-populated classes.
@@ -226,6 +233,42 @@ def _augment_data(tree_ids, labels, imgs):
         tree_ids = np.concatenate([tree_ids, tree_ids_add])
         labels = np.concatenate([labels, labels_add])
         imgs = np.concatenate([imgs, imgs_add])
+    return tree_ids, labels, imgs
+
+def _augment_data(tree_ids, labels, imgs):
+    """
+    Augment data by performing 90 degree rotations and flipping to the
+    images for all classes.
+    """
+    # new_imgs = imgs
+    # new_labels = labels
+    # new_ids = tree_ids
+    tree_ids_add = []
+    labels_add = []
+    imgs_add = []
+    for id, lbl, img in zip(tree_ids, labels, imgs):
+        #Flip and add image    
+        flipped_img = _flip(img)
+        imgs_add.append(flipped_img)
+        labels_add.append(lbl)
+        tree_ids_add.append(id)
+
+        #Rotate image by three angles and flip each image
+        for angle in [90, 180, 270]:
+            rotated_image = _rotate(img, angle)
+            imgs_add.append(rotated_image)
+            labels_add.append(lbl)
+            tree_ids_add.append(id)
+            flipped_img = _flip(rotated_image)
+            imgs_add.append(flipped_img)
+            labels_add.append(lbl)
+            tree_ids_add.append(id)
+            
+
+    imgs = np.concatenate([imgs, imgs_add])
+    tree_ids = np.concatenate([tree_ids, tree_ids_add])
+    labels = np.concatenate([labels, labels_add])
+
     return tree_ids, labels, imgs
 
 
