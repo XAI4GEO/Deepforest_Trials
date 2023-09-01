@@ -2,9 +2,10 @@ import glob
 import time
 
 import geopandas
+import numpy as np
 import pandas as pd
 import rioxarray
-import numpy as np
+import skimage.transform
 
 from rioxarray.exceptions import NoDataInBounds
 from sklearn.preprocessing import LabelEncoder
@@ -26,6 +27,7 @@ class IDTreeSDataset:
             max_pixel_size=None,
             pixel_size=None,
             min_sample_size=None,
+            augment_data=False,
     ):
         self.rgb_paths = rgb_paths
         self.bboxes_paths = bboxes_paths
@@ -39,6 +41,7 @@ class IDTreeSDataset:
             else PIXEL_SIZE_DEF
         self.min_sample_size = min_sample_size if min_sample_size is not None \
             else MIN_SAMPLE_SIZE_DEF
+        self.augment_data = augment_data
 
         self.classes = None
         self.bboxes = None
@@ -133,6 +136,11 @@ class IDTreeSDataset:
             self.min_sample_size
         )
 
+        if self.augment_data:
+            tree_ids, labels, imgs = _augment_data(
+                tree_ids, labels, imgs
+            )
+
         # convert class labels to categorical values
         le = LabelEncoder()
         le.fit(labels)
@@ -143,13 +151,11 @@ class IDTreeSDataset:
 def _balance_classes(tree_ids, labels, imgs, min_sample_size):
     """
     Balance class compositions by dropping classes with
-    few samples and by performing data augmentation.
+    few samples.
     """
     labels_unique, counts = np.unique(labels, return_counts=True)
     labels_to_keep = labels_unique[counts >= min_sample_size]
     mask = np.isin(labels, labels_to_keep)
-
-    # data augmentation here?
     return (
         tree_ids[mask],
         labels[mask],
@@ -167,6 +173,60 @@ def _small_image(data, min_pixel_size):
     if min(data.shape[1:]) <= min_pixel_size:
         return True
     return False
+
+
+def _random_transform(data):
+    """ Apply random flip/rotation to the data. """
+    flip_data = np.random.random() > 0.5
+    flipped = _flip(data) if flip_data else data
+
+    angle = np.random.choice([0, 90, 180, 270])
+    rotated = _rotate(flipped, angle)
+    return rotated
+
+
+def _flip(data):
+    # horizontal flip
+    return data[:, ::-1]
+
+
+def _rotate(data, angle, resize=False):
+    data_ = data.transpose(1, 2, 0)  # band index at the end
+    rotated = skimage.transform.rotate(
+        data_,
+        angle,
+        resize=resize,
+        mode='constant',
+        cval=0,
+    )
+    return rotated.transpose(2, 0, 1)  # same as on input
+
+
+def _augment_data(tree_ids, labels, imgs):
+    """
+    Augment data by performing random flip/rotations to the
+    images of the under-populated classes.
+    """
+    lbls, counts = np.unique(labels, return_counts=True)
+    target_class_size = np.max(counts)
+    tree_ids_add = []
+    labels_add = []
+    imgs_add = []
+    for lbl, count in zip(lbls, counts):
+        for _ in range(target_class_size - count):
+            mask = labels == lbl
+            imgs_lbl = imgs[mask]
+            tree_ids_lbl = tree_ids[mask]
+            idx = np.random.choice(count)
+            new_img = _random_transform(imgs_lbl[idx])
+            imgs_add.append(new_img)
+            labels_add.append(lbl)
+            tree_ids_add.append(tree_ids_lbl[idx])
+    if imgs_add:
+        tree_ids = np.concatenate([tree_ids, tree_ids_add])
+        labels = np.concatenate([labels, labels_add])
+        imgs = np.concatenate([imgs, imgs_add])
+    return tree_ids, labels, imgs
 
 
 def _pad_image(data, pixel_size):
