@@ -3,6 +3,8 @@ Repository contains notebook tutorials that combine the deep forest machine lear
 
 ## DeepTree prediction experiment
 
+[Results plots](https://nlesc.sharepoint.com/:f:/s/XAI4GEO/ElGyoojqYWRAqInJ1wlrijkBwGob-afGV5LXGkkb5Y9ULw?e=WwfzEd)
+
 Experiment of predicting tree canopies with `predict_tile` function with different input arguments. Performed in the notebook:  **Deepforest_predict_exp.ipynb**. 
 
 The variables are:
