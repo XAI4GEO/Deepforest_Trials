@@ -62,9 +62,7 @@ def _to_image_geo(row, image):
 
 def _to_numpy(img_da):
     """Convert a DataArray image to numpy. Apply rotation and flip to align the pixel coordinates with geo coordinates"""
-    img_np = img_da.transpose("x", "y", "band").to_numpy()
-    img_np = np.rot90(img_np)
-    img_np = np.flipud(img_np)
+    img_np = img_da.transpose("y", "x", "band").to_numpy()
     return img_np
 
 
