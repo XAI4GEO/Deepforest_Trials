@@ -8,6 +8,31 @@ from sklearn.preprocessing import LabelEncoder
 
 
 class TreeDataset:
+    """
+    Extract tree crown images from one or more rasters using
+    contour boundaries.
+
+    Args:
+        rgbs: RGB images where to extract the tree crowns from,
+            provided as a list of paths or xarray DataArray objects.
+        bboxes: shapes of the individual tree crowns, provided as
+            a geopandas GeoDataFrame object (indices should match the
+            DataFrame used to provide classes).
+        classes: classification of the tree crowns, provided as a
+            pandas DataFrame (indices should match the GeoDataFrame
+            used to provide tree crown shapes).
+        min_pixel_size: side of the smallest cutout in pixel (smaller
+            cutouts will be discarded).
+        max_pixel_size: side of the largest cutout in pixel (larger
+            cutouts will be discarded).
+        pixel_size: cutouts will be padded to a square image of the
+            given side. It should be greater than or equal to
+            max_pixel_size.
+        min_sample_size: classes with less samples than the given
+            amount will be discarded.
+        augment_data: whether to perform data augmentation by rotation
+            (90, 180 and 270 degrees) and mirroring.
+    """
     def __init__(
             self,
             rgbs,
@@ -66,7 +91,17 @@ class TreeDataset:
             yield id, label, img
 
     def get_cutouts(self):
-        """ Load cutouts from all images. """
+        """
+        Load and return cutouts extracted from all images.
+
+        Returns:
+            tree_ids: tree IDs, as a np.ndarray with shape
+                (ncutouts,)
+            labels: categorical labels, as a np.ndarray with shape
+                (ncutouts,)
+            imgs: sequence of cutouts, as a np.ndarray with shape
+                (ncutouts, ny, nx, 3)
+        """
         tree_ids = []
         labels = []
         imgs = []
@@ -154,8 +189,8 @@ def _rotate(img, angle, resize=False):
 
 def _augment_data(tree_ids, labels, imgs):
     """
-    Augment data by performing 90 degree rotations and flipping to the
-    images for all classes.
+    Augment data by performing 90 degree rotations and flipping to
+    the images for all classes.
     """
     # new_imgs = imgs
     # new_labels = labels
@@ -189,7 +224,7 @@ def _augment_data(tree_ids, labels, imgs):
 
 
 def _pad_image(data, pixel_size):
-    """ Pad each image """
+    """ Pad each image to shape (pixel_size, pixel_size) """
     pad_width_x1 = np.floor((pixel_size - data.shape[1])/2).astype(int)
     pad_width_x2 = pixel_size - data.shape[1] - pad_width_x1
     pad_width_y1 = np.floor((pixel_size - data.shape[0])/2).astype(int)
