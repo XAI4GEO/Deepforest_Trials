@@ -7,36 +7,26 @@ from rioxarray.exceptions import NoDataInBounds
 from sklearn.preprocessing import LabelEncoder
 
 
-MIN_PIXEL_SIZE_DEF = 32
-MAX_PIXEL_SIZE_DEF = 100
-PIXEL_SIZE_DEF = 100
-MIN_SAMPLE_SIZE_DEF = 10
-
-
 class TreeDataset:
     def __init__(
             self,
             rgbs,
             bboxes,
             classes,
-            min_pixel_size=None,
-            max_pixel_size=None,
-            pixel_size=None,
-            min_sample_size=None,
+            min_pixel_size=32,
+            max_pixel_size=100,
+            pixel_size=100,
+            min_sample_size=10,
             augment_data=False
     ):
         self.rgbs = rgbs
         self.bboxes = bboxes
         self.classes = classes
 
-        self.min_pixel_size = min_pixel_size if min_pixel_size is not None \
-            else MIN_PIXEL_SIZE_DEF
-        self.max_pixel_size = max_pixel_size if max_pixel_size is not None \
-            else MAX_PIXEL_SIZE_DEF
-        self.pixel_size = pixel_size if pixel_size is not None \
-            else PIXEL_SIZE_DEF
-        self.min_sample_size = min_sample_size if min_sample_size is not None \
-            else MIN_SAMPLE_SIZE_DEF
+        self.min_pixel_size = min_pixel_size
+        self.max_pixel_size = max_pixel_size
+        self.pixel_size = pixel_size
+        self.min_sample_size = min_sample_size
 
         self.augment_data = augment_data
 

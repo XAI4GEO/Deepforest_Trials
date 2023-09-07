@@ -14,11 +14,7 @@ class IDTreeSDataset(TreeDataset):
             rgb_paths,
             bboxes_paths,
             classes_path,
-            min_pixel_size=None,
-            max_pixel_size=None,
-            pixel_size=None,
-            min_sample_size=None,
-            augment_data=False
+            **kwargs
     ):
 
         classes = _load_classes(classes_path)
@@ -28,11 +24,7 @@ class IDTreeSDataset(TreeDataset):
             rgb_paths,
             bboxes,
             classes,
-            min_pixel_size=min_pixel_size,
-            max_pixel_size=max_pixel_size,
-            pixel_size=pixel_size,
-            min_sample_size=min_sample_size,
-            augment_data=augment_data,
+            **kwargs
         )
 
 
