@@ -122,10 +122,7 @@ def predict_crops(image_crops, tile_size, overlap_size):
 
     df_predict = df_predict.reset_index(drop=True)
 
-    try:
-        gdf_predict = _to_gdf(df_predict, image_crops.crs)
-    except AttributeError:
-        gdf_predict = _to_gdf(df_predict)
+    gdf_predict = _to_gdf(df_predict, image_crops[0].rio.crs)
 
     return gdf_predict
 
