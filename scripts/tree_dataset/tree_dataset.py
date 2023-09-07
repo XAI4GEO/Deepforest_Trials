@@ -1,6 +1,7 @@
 import numpy as np
 import rioxarray
 import skimage.transform
+import xarray as xr
 
 from rioxarray.exceptions import NoDataInBounds
 from sklearn.preprocessing import LabelEncoder
@@ -15,7 +16,7 @@ MIN_SAMPLE_SIZE_DEF = 10
 class TreeDataset:
     def __init__(
             self,
-            rgb_paths,
+            rgbs,
             bboxes,
             classes,
             min_pixel_size=None,
@@ -24,8 +25,7 @@ class TreeDataset:
             min_sample_size=None,
             augment_data=False
     ):
-        self.rgb_paths = [rgb_paths] \
-            if isinstance(rgb_paths, str) else rgb_paths
+        self.rgbs = rgbs
         self.bboxes = bboxes
         self.classes = classes
 
@@ -40,10 +40,11 @@ class TreeDataset:
 
         self.augment_data = augment_data
 
-    def _generate_cutouts_for_image(self, rgb_path):
+    def _generate_cutouts_for_image(self, rgb):
         """ Extract all cutouts for a given image. """
 
-        rgb = rioxarray.open_rasterio(rgb_path, masked=True)
+        if not isinstance(rgb, xr.DataArray):
+            rgb = rioxarray.open_rasterio(rgb, masked=True)
 
         assert self.bboxes.crs == rgb.rio.crs
 
@@ -79,8 +80,8 @@ class TreeDataset:
         tree_ids = []
         labels = []
         imgs = []
-        for rgb_path in self.rgb_paths:
-            cutouts = self._generate_cutouts_for_image(rgb_path)
+        for rgb in self.rgbs:
+            cutouts = self._generate_cutouts_for_image(rgb)
             for tree_id, label, img in cutouts:
                 tree_ids.append(tree_id)
                 labels.append(label)
