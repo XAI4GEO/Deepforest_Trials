@@ -2,6 +2,7 @@ name: xai4geo
 channels:
   - conda-forge
 dependencies:
+  - deepforest
   - geopandas
   - jupyterlab
   - laspy
