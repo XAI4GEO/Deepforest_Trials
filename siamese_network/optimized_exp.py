@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import keras
 import tensorflow as tf
 from keras import backend as k
@@ -7,20 +9,18 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-keras.backend.set_image_data_format('channels_first')
-
 def _create_model(nneurons, nfilters, ndropout, npool):
-    inputs = keras.Input((3, 100, 100))
+    inputs = keras.Input((100, 100, 3))
     x = keras.layers.Conv2D(nneurons[0], (nfilters[0], nfilters[0]), padding="same", activation="relu")(inputs)
-    x = keras.layers.MaxPooling2D(pool_size=(npool[0], npool[0]))(x)
+    x = keras.layers.MaxPooling2D(pool_size=(npool[0], npool[0]), data_format='channels_last')(x)
     x = keras.layers.Dropout(ndropout[0])(x)
 
     x = keras.layers.Conv2D(nneurons[1], (nfilters[1], nfilters[1]), padding="same", activation="relu")(x)
-    x = keras.layers.MaxPooling2D(pool_size=(npool[1], npool[1]))(x)
+    x = keras.layers.MaxPooling2D(pool_size=(npool[1], npool[1]), data_format='channels_last')(x)
     x = keras.layers.Dropout(ndropout[0])(x)
 
     x = keras.layers.Conv2D(nneurons[2], (nfilters[2], nfilters[2]), padding="same", activation="relu")(x)
-    x = keras.layers.MaxPooling2D(pool_size=(npool[2], npool[2]))(x)
+    x = keras.layers.MaxPooling2D(pool_size=(npool[2], npool[2]), data_format='channels_last')(x)
     x = keras.layers.Dropout(ndropout[0])(x)
 
     pooledOutput = keras.layers.GlobalAveragePooling2D()(x)
@@ -37,8 +37,8 @@ def _euclidean_distance(vectors):
 
 def siamese_model(nneurons, nfilters, ndropout, npool):
     feature_extractor_model = _create_model(nneurons, nfilters, ndropout, npool)
-    imgA = keras.Input(shape=(3, 100, 100))
-    imgB = keras.Input(shape=(3, 100, 100))
+    imgA = keras.Input(shape=(100, 100, 3))
+    imgB = keras.Input(shape=(100, 100, 3))
     featA = feature_extractor_model(imgA)
     featB = feature_extractor_model(imgB)
     distance = keras.layers.Lambda(_euclidean_distance)([featA, featB])
@@ -57,10 +57,10 @@ def load_model_weights(model, weights):
 
 def read_data(filename):
     data = np.load(filename)
-    return data['X_train'], data['y_train'], data['X_val'], data['y_val']
+    return data['X_train'].transpose(0,1,3,4,2), data['y_train'], data['X_val'].transpose(0,1,3,4,2), data['y_val']
 
 def train_model(model, X_train, y_train, X_val, y_val, batch_size, epochs):
-    callbacks = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, start_from_epoch=5, restore_best_weights=True)
+    callbacks = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, start_from_epoch=20, restore_best_weights=True)
     history = model.fit([X_train[:, 0], X_train[:, 1]], y_train[:], validation_data=([X_val[:,0], X_val[:,1]], y_val[:]), batch_size=batch_size, epochs=epochs, callbacks=callbacks)
     return history
 
@@ -149,18 +149,23 @@ def save_image(filename):
     p.close()  
 
 def main():
+
+    keras.backend.set_image_data_format('channels_last')
+
     #Base parameters
-    nneurons = [32, 64, 96, 128, 32]
-    nfilters = [5, 5, 3]
-    ndropout = [0.3, 0.3, 0.3]
+    filename = 'optimized.pdf'
+    nneurons = [32, 64, 96, 64, 32]
+    nfilters = [5, 5, 5]
+    ndropout = [0.4, 0.4, 0.4]
     npool = [2, 2, 2]
-    lr = 0.01
+    lr = 0.001 
     batchsize = 32
-    epochs = 50
+    epochs = 100
     print ('Created Base Parameters')
 
     #Load data
     X_train, y_train, X_val, y_val = read_data('train_data.npz')
+    X_train = X_train
     print ('Loaded Data')
 
     #Create model
@@ -184,9 +189,13 @@ def main():
     print ('Model Prediction Completed')
 
     #Plot data
-    filename = 'exp_nneurons_' + str(i) + '_' + str(j) + '.pdf'
     plots(history, labels_pred, labels_pair, filename)
     print ('Created Plots')
+
+    print (history.history)
+    print ('Best Accuracy on Validation Set: ',max(history.history['val_binary_accuracy']))
+
+    model.save_weights('optimized_weights.h5')
 
 if __name__ == "__main__":
     main()
