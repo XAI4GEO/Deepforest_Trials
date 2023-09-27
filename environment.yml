@@ -1,0 +1,12 @@
+name: xai4geo
+channels:
+  - conda-forge
+dependencies:
+  - deepforest
+  - geopandas
+  - jupyterlab
+  - laspy
+  - matplotlib
+  - rioxarray
+  - scikit-image
+  - tensorflow
