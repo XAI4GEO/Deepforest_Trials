@@ -55,9 +55,28 @@ def compile_model(model, lr, metrics):
 def load_model_weights(model, weights):
     model.load_weights(weights)    
 
-def read_data(filename):
+def read_pp_data(filename):
     data = np.load(filename)
-    return data['X_train'].transpose(0,1,3,4,2), data['y_train'], data['X_val'].transpose(0,1,3,4,2), data['y_val']
+    return data['X'].transpose(0,1,3,4,2), data['y']
+
+def generate_train_image_pairs(X):
+    
+    pair_images = []
+    pair_labels = []
+    pair_index = []
+
+    for labeli in range(X.shape[0]):
+        for i in range(X.shape[1]):
+            for j in range(X.shape[1]):
+                for labelj in range(X.shape[0]):
+                    image = X[labeli,i,:,:,:]
+                    image2 = X[labelj,j,:,:,:]
+                    pair_images.append((image, image2))
+                    if labeli == labelj:
+                        pair_labels.append(1)
+                    else:
+                        pair_labels.append(0)
+    return np.array(pair_images), np.array(pair_labels)
 
 def train_model(model, X_train, y_train, X_val, y_val, batch_size, epochs):
     callbacks = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, start_from_epoch=20, restore_best_weights=True)
@@ -153,18 +172,19 @@ def main():
     keras.backend.set_image_data_format('channels_last')
 
     #Base parameters
-    filename = 'optimized.pdf'
+    filename = 'trial.pdf'
     nneurons = [32, 64, 96, 64, 32]
     nfilters = [5, 5, 5]
     ndropout = [0.4, 0.4, 0.4]
     npool = [2, 2, 2]
     lr = 0.001 
-    batchsize = 32
-    epochs = 100
+    batchsize = 64
+    epochs = 10
     print ('Created Base Parameters')
 
     #Load data
-    X_train, y_train, X_val, y_val = read_data('train_data.npz')
+    X, y = read_pp_data('train_data_da.npz')
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0, shuffle=True)
     print ('Loaded Data')
 
     #Create model
