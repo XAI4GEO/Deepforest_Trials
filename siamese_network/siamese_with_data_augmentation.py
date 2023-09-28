@@ -189,7 +189,6 @@ def main():
 
     #Create model
     model = siamese_model(nneurons, nfilters, ndropout, npool)
-    # load_model_weights(model, 'weights_base.h5')
     # print ('Created Model')
 
     #Compile model
