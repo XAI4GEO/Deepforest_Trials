@@ -8,4 +8,4 @@ siamese_network.py: python file for running the siamese network with manual capa
 
 siamese_with_data_augmentation.py: python file for running siamese network with data augmentation, where each image is compared with every other image available in the dataset
 
-optimized_*: The optimized files after hyperparameter tuning
+optimized_experiment: The optimized files after hyperparameter tuning (*note that this is currently without data-augmentation)
