@@ -2,3 +2,10 @@ IDTreeS_dataset.py
 *.npz
 local
 *pycache*
+deepforest_exp.py
+*.tif
+*.shp
+*.shx
+*.prj
+*.dbf
+*.cpg

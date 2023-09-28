@@ -165,7 +165,6 @@ def main():
 
     #Load data
     X_train, y_train, X_val, y_val = read_data('train_data.npz')
-    X_train = X_train
     print ('Loaded Data')
 
     #Create model
