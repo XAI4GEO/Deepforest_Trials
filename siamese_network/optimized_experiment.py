@@ -170,17 +170,16 @@ def main():
 
     #Create model
     model = siamese_model(nneurons, nfilters, ndropout, npool)
-    # load_model_weights(model, 'weights_base.h5')
-    # print ('Created Model')
+    print ('Created Model')
 
     #Compile model
     metrics = [keras.metrics.BinaryAccuracy(threshold=0.5)]
     compile_model(model, lr, metrics)
-    # print ('Compiled Model')
+    print ('Compiled Model')
 
     #Train data
     history = train_model(model, X_train, y_train, X_val, y_val, batchsize, epochs)
-    # print ('Trained Model')
+    print ('Trained Model')
 
     #Model Prediction
     images_pair = np.append(X_train, X_val, axis = 0)
