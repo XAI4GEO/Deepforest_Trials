@@ -72,7 +72,8 @@ class TreeDataset:
 
             # some polygons may have very small intersections
             try:
-                cutout = rgb.rio.clip([bbox], drop=True)
+                cutout_box = rgb.rio.clip_box(*bbox.bounds) # First clip with bounding box
+                cutout = cutout_box.rio.clip([bbox], drop=True)
             except NoDataInBounds:
                 continue
 
